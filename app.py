@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 app = Flask(__name__)
 SECRET_KEY = "pudim"
@@ -33,6 +33,23 @@ def login():
     if request.method == "POST":
         if request.form['username'] == USERNAME and request.form['password'] == PASSWORD:
             session['logado'] = True
+            flash("Login efetuado com sucesso!")
             return redirect(url_for('exibir_entradas'))
         erro = "Usuário ou senha inválidos"
     return render_template("login.html", erro=erro)
+
+@app.route('/logout')
+def logout():
+    session.pop('logado', None)
+    flash("Logout efetuado com sucesso!")
+    return redirect(url_for('exibir_entradas'))
+
+@app.route('/inserir', methods=["POST"])
+def inserir_entradas():
+    if not session['logado']:
+        abort(401)
+    sql = "INSERT INTO entradas(titulo, texto) VALUES (?, ?)"
+    g.bd.execute(sql, [request.form['titulo'], request.form['texto']])
+    g.bd.commit()
+    flash("Novo Post criado com sucesso!")
+    return redirect(url_for('exibir_entradas'))
